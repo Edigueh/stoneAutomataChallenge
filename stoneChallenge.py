@@ -18,7 +18,7 @@ def is_green(x, y, new_matrix):
 
 # Define a function to update the matrix
 def update_matrix(matrix):
-    matrixToUpdate = np.copy(matrix) #Matriz passada a cada vez que get_next_move é chamada
+    matrixToUpdate = np.copy(matrix)
     new_matrix = np.copy(matrix)
     for i in range(matrix.shape[0]): # for each row
         for j in range(matrix.shape[1]): # for each column on i row
@@ -41,23 +41,18 @@ def update_matrix(matrix):
     return new_matrix
 
 # 1st - Define a function to get the next move
-def get_next_move(matrix, current_position, end_position):
-    x, y = current_position
-    new_matrix = np.copy(matrix)
-    updated_matrix = update_matrix(new_matrix)
-    plt.imshow(updated_matrix, cmap='hot', interpolation='nearest')
-    plt.show()
-    return 1
+
 
 # Iniciando do zero
 current_position = start_point
 moves = []
 while current_position is not end_point: #ao chegar na posição final, não haverá current position
-    next_move = get_next_move(matrix, current_position, end_point)
-    if next_move is None:
-        break
-    #moves.append(next_move[0])
-    #current_position = next_move[1]
+    x, y = current_position
+    new_matrix = np.copy(matrix)
+    updated_matrix = update_matrix(new_matrix)
+    matrix = updated_matrix
+    plt.imshow(matrix, cmap='viridis', interpolation='nearest')
+    plt.show()
 
 # Write the output to a file
 with open("output.txt", "w") as f:
