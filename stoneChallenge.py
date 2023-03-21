@@ -1,83 +1,111 @@
-import numpy as np
+from enum import Enum
+from numpy import ndarray, loadtxt, copy
 import matplotlib.pyplot as plt
 
-# Lê o arquivo input.txt e transforma em uma matriz.
-matrix = np.loadtxt("input.txt", dtype=int)
+MAP_NAME: str = "input.txt"
+TEST_MAP_NAME: str = "test_input.txt"
+#Authors: Jawdigué
 
-# Find the starting point and the destination point
-start_point = np.argwhere(matrix == 3)[0] # [0,0]
-end_point = np.argwhere(matrix == 4)[0] # [64 ,84]
+class Path(Enum):
+    WHITE = 0
+    GREEN = 1
+    INITIAL = 3
+    END = 4
 
-# Define a function to check if a cell is white
-def is_white(x, y):
+
+def read_initial_map(file_name: str) -> ndarray:
+    initial_map = loadtxt(file_name, dtype=int)
+    return initial_map
+
+
+def check_path(path_list: list[int]):
+    for path_number in path_list:
+        print(Path(path_number).name)
+
+
+def is_white(matrix: ndarray, x: int, y: int):
     return matrix[x, y] == 0
 
-# Define a function to check if a cell is green
-def is_green(x, y):
+
+def is_green(matrix: ndarray, x: int, y: int):
     return matrix[x, y] == 1
 
-# Define a function to update the matrix
-def update_matrix(matrix):
-    new_matrix = np.copy(matrix)
-    for i in range(matrix.shape[0]):
-        for j in range(matrix.shape[1]):
-            if is_white(i, j):
+
+def is_finished(matrix: ndarray, x: int, y: int):
+    return matrix[x, y] == 4
+
+
+def update_matrix(matrix: ndarray):
+    new_matrix = copy(matrix)
+
+    for row in range(matrix.shape[0]):
+        for column in range(matrix.shape[1]):
+
+            actual_matrix_value = matrix[row, column]
+
+            upper_row = max(row - 1, 0)
+            bottom_row = min(row + 2, matrix.shape[0])
+
+            left_column = max(column - 1, 0)
+            right_column = min(column + 2, matrix.shape[1])
+
+            if is_white(matrix=matrix, x=row, y=column):
                 green_adjacent = 0
-                for x in range(max(i-1, 0), min(i+2, matrix.shape[0])):
-                    for y in range(max(j-1, 0), min(j+2, matrix.shape[1])):
-                        if is_green(x, y):
+
+                for adjacent_row in range(upper_row, bottom_row):
+                    for adjacent_column in range(left_column, right_column):
+
+                        if adjacent_column == column and adjacent_row == row:
+                            continue
+                        elif is_green(matrix=matrix, x=adjacent_row, y=adjacent_column):
                             green_adjacent += 1
-                if green_adjacent > 1 and green_adjacent < 5:
-                    new_matrix[i, j] = 1
-            elif is_green(i, j):
+
+                if 1 < green_adjacent < 5:
+                    new_matrix[row, column] = 1
+
+            elif is_green(matrix=matrix, x=row, y=column):
                 green_adjacent = 0
-                for x in range(max(i-1, 0), min(i+2, matrix.shape[0])):
-                    for y in range(max(j-1, 0), min(j+2, matrix.shape[1])):
-                        if is_green(x, y):
+
+                for adjacent_row in range(upper_row, bottom_row):
+                    for adjacent_column in range(left_column, right_column):
+
+                        if adjacent_column == column and adjacent_row == row:
+                            continue
+                        elif is_green(matrix=matrix, x=adjacent_row, y=adjacent_column):
                             green_adjacent += 1
-                if green_adjacent < 4 or green_adjacent > 5:
-                    new_matrix[i, j] = 0
+
+                if not (3 < green_adjacent < 6):
+                    new_matrix[row, column] = 0
+
     return new_matrix
 
-# 1st - Define a function to get the next move
-def get_next_move(matrix, current_position, end_position):
-    x, y = current_position
-    if x == end_position[0] and y == end_position[1]:
-        return None
-    moves = []
-    if x > 0 and is_white(x-1, y):
-        moves.append(("U", (x-1, y)))
-    if x < matrix.shape[0]-1 and is_white(x+1, y):
-        moves.append(("D", (x+1, y)))
-    if y > 0 and is_white(x, y-1):
-        moves.append(("L", (x, y-1)))
-    if y < matrix.shape[1]-1 and is_white(x, y+1):
-        moves.append(("R", (x, y+1)))
-    if not moves:
-        return None
-    moves_with_scores = []
-    for move in moves:
-        new_matrix = np.copy(matrix)
-        new_matrix[x, y] = 1
-        new_matrix[move[1]] = 3
-        updated_matrix = update_matrix(new_matrix)
-        plt.imshow(updated_matrix, cmap='hot', interpolation='nearest')
-        plt.show()
-        score = np.sum(updated_matrix == 1)
-        moves_with_scores.append((score, move))
-    moves_with_scores.sort(reverse=True)
-    return moves_with_scores[0][1]
 
-# Iniciando do zero
-current_position = start_point
-moves = []
-while current_position is not None: #ao chegar na posição final, não haverá current position
-    next_move = get_next_move(matrix, current_position, end_point)
-    if next_move is None:
-        break
-    moves.append(next_move[0])
-    current_position = next_move[1]
+def generate_map_image(matrix: ndarray):
+    plt.imshow(
+        matrix,
+        cmap='viridis',
+        interpolation='nearest'
+    )
+    plt.show()
 
-# Write the output to a file
-with open("output.txt", "w") as f:
-    f.write(" ".join(moves))
+
+#################################
+# Transformar a matrix em uma matrix linear
+# Encontrar o ID com base na linha e na coluna
+# a linha sendo sempre vezes o len de uma linha
+# Menos a coluna que vai ser vir de offset
+#################################
+
+
+if __name__ == '__main__':
+    path_map = read_initial_map(file_name=MAP_NAME)
+
+    current_map = path_map
+    while True:
+        generate_map_image(current_map)
+        updated_matrix = update_matrix(current_map)
+        current_map = updated_matrix
+
+    # print(path_map)
+    # for line in path_map:
+    #     check_path(path_list=line)
